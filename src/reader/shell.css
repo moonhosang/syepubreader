@@ -8,7 +8,7 @@
   --note-blue:#2f6d9e;--note-blue-bg:#eaf1f7;--note-green:#2e7d55;--note-green-bg:#e8f4ec;
   --note-amber:#b26a05;--note-amber-bg:#fbf1e0;--sel:#cfe0ef;
   --maxw:720px;--wide:860px;--chrome:rgba(255,255,255,.86);
-  --gut-top:5vh;--gut-bottom:7vh;  /* 화면 고정 상하 거터(letterbox) — 스크롤 내내 상/하단 여백 유지. vh라 모니터 길수록 커짐 */
+  --gut-top:5vh;--gut-bottom:7vh;  /* 화면 고정 상하 거터(letterbox) — 스크롤 내내 상/하단 여백 유지. vh라 모니터 길수록 커짐· 의도적으로 dvh 아님: 연속 모드에서 툴바 출몰마다 여백이 바뀌면 책 전체가 재배치돼 읽던 위치가 튐 */
   --sp-pad:14.6dvw;  /* 책(2쪽) 양옆 폭(바깥 여백) — dvw(뷰포트폭 비례). 기본 14.6dvw≈280px@1920 */
   --sp-gap:0.8dvw;   /* 책(2쪽) 가운데 폭(접지 간격=칼럼 gap) — dvw. 기본 0.8dvw≈16px@1920 */
 }
@@ -156,7 +156,7 @@ pre.collapsible.open{max-height:none;}
 .hd-foot{text-align:center;color:var(--ink-faint);font-size:var(--t-caption);margin-top:12px;}
 .lightbox{position:fixed;inset:0;z-index:200;background:rgba(10,14,20,.86);display:none;flex-direction:column;align-items:center;justify-content:center;padding:28px;cursor:zoom-out;}
 .lightbox.show{display:flex;}
-.lightbox img{max-width:96vw;max-height:84vh;border-radius:8px;background:#fff;box-shadow:0 10px 50px rgba(0,0,0,.5);}
+.lightbox img{max-width:96vw;max-width:96dvw;max-height:84vh;max-height:84dvh;border-radius:8px;background:#fff;box-shadow:0 10px 50px rgba(0,0,0,.5);}
 .lightbox .lb-cap{color:#dfe6ee;font-size:var(--t-caption);margin-top:14px;max-width:760px;text-align:center;}
 .lightbox .lb-close{position:absolute;top:18px;right:22px;color:#fff;font-size:1.8rem;background:none;border:none;cursor:pointer;line-height:1;}
 
@@ -202,12 +202,12 @@ hr.sep{border:none;border-top:1px solid var(--line);max-width:var(--wide);margin
 /* ===== 가로 페이지 pager — 페이지(1칼럼)·책(2칼럼) 공용 CSS 멀티컬럼 =====
    멀티컬럼은 '줄 상자(line box)' 경계로만 끊음 → 글자 중간이 안 잘림(vh 스냅의 상/하단 싹둑 문제 해소).
    잔여 한계: 페이지보다 큰 이미지/코드는 높이에 맞춰 축소(글리프 단위 분할 아님). */
-:root.paged,:root.paged body,:root.spread,:root.spread body{height:100vh;max-height:100vh;overflow:hidden;}
-:root.paged .page,:root.spread .page{position:relative;height:100vh;max-width:none;margin:0 auto;padding:var(--gut-top) 0 var(--gut-bottom);
+:root.paged,:root.paged body,:root.spread,:root.spread body{height:100vh;max-height:100vh;height:100dvh;max-height:100dvh;overflow:hidden;}  /* dvh=실제 보이는 높이: 모바일 사파리 툴바에 쪽 아래 줄이 가려지던 버그(vh=툴바 숨김 기준) · vh 는 미지원 폴백 */
+:root.paged .page,:root.spread .page{position:relative;height:100vh;height:100dvh;max-width:none;margin:0 auto;padding:var(--gut-top) 0 var(--gut-bottom);
   column-fill:auto;overflow-x:auto;overflow-y:hidden;scroll-behavior:smooth;}
 :root.paged .rz-top,:root.paged .rz-bottom,:root.spread .rz-top,:root.spread .rz-bottom{display:none;}
 /* 페이지(1칼럼): 가운데 단일 칼럼=폭(--wide)·중앙정렬(좌우는 빈 여백=중심시야 정합) */
-:root.paged .page{width:min(var(--wide), calc(100vw - 32px));column-width:var(--wide);column-gap:0;}
+:root.paged .page{width:min(var(--wide), calc(100vw - 32px));width:min(var(--wide), calc(100dvw - 32px));column-width:var(--wide);column-gap:0;}
 /* 책(2칼럼): 양옆 폭(바깥 여백)·가운데 폭(접지 간격) */
 :root.spread .page{width:calc(100dvw - 2*var(--sp-pad));column-width:calc((100dvw - 2*var(--sp-pad) - var(--sp-gap)) / 2);column-gap:var(--sp-gap);column-rule:1px solid var(--line);
   /* 정수 px 스냅(round 지원 브라우저만 덮어씀·미지원은 위 선언 폴백) — dvw 소수점 폭이 쪽 넘김 계산에 누적 오차를 만들지 않게. 2px 단위=2단 분할도 정수. */
@@ -233,9 +233,9 @@ hr.sep{border:none;border-top:1px solid var(--line);max-width:var(--wide);margin
 :root.paged .page :where(p,ul,ol,blockquote,.note,.secsum,.takeaway,.synopsis,.covers,.readable-text,.fig-note,.sec>*,.doc>*),
 :root.spread .page :where(p,ul,ol,blockquote,.note,.secsum,.takeaway,.synopsis,.covers,.readable-text,.fig-note,.sec>*,.doc>*){max-width:none;margin-left:0;margin-right:0;}
 /* 큰 블록은 페이지(칼럼) 높이에 맞춰 축소해 오버플로 클립 완화 */
-:root.paged .figimg img,:root.spread .figimg img{max-height:72vh;width:auto;}
+:root.paged .figimg img,:root.spread .figimg img{max-height:72vh;max-height:72dvh;width:auto;}
 /* pager 코드블록 최대 높이 = 상하여백 뺀 실제 페이지 사용높이. 넘치면 블록 내부에서 세로 스크롤(잘림 방지·가로 스와이프와 무관). */
-:root.paged .listing,:root.paged pre.code,:root.paged pre.spec,:root.spread .listing,:root.spread pre.code,:root.spread pre.spec{max-height:calc(100vh - var(--gut-top) - var(--gut-bottom) - 2.4em);overflow:auto;}
+:root.paged .listing,:root.paged pre.code,:root.paged pre.spec,:root.spread .listing,:root.spread pre.code,:root.spread pre.spec{max-height:calc(100vh - var(--gut-top) - var(--gut-bottom) - 2.4em);max-height:calc(100dvh - var(--gut-top) - var(--gut-bottom) - 2.4em);overflow:auto;}
 /* 코드 줄바꿈 정책(모드별): 연속=가로 스크롤(정확한 서식) / 책·페이지=소프트랩 —
    pager 는 가로 스크롤이 페이지 스와이프와 충돌하므로 줄을 접어 잘림·충돌을 없앤다. */
 :root.paged pre.code,:root.spread pre.code,:root.paged pre.spec,:root.spread pre.spec{white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;overflow-x:hidden;}
@@ -277,7 +277,7 @@ hr.sep{border:none;border-top:1px solid var(--line);max-width:var(--wide);margin
 /* ===== TOC drawer ===== */
 .drawer-overlay{position:fixed;inset:0;background:rgba(10,14,20,.4);z-index:170;opacity:0;pointer-events:none;transition:opacity .25s;}
 .drawer-overlay.show{opacity:1;pointer-events:auto;}
-.drawer{position:fixed;top:0;left:0;height:100%;width:340px;max-width:86vw;background:var(--paper);border-right:1px solid var(--line-strong);z-index:180;transform:translateX(-102%);transition:transform .28s cubic-bezier(.22,.61,.36,1);display:flex;flex-direction:column;box-shadow:4px 0 30px rgba(20,30,45,.18);}
+.drawer{position:fixed;top:0;left:0;height:100%;width:340px;max-width:86vw;max-width:86dvw;background:var(--paper);border-right:1px solid var(--line-strong);z-index:180;transform:translateX(-102%);transition:transform .28s cubic-bezier(.22,.61,.36,1);display:flex;flex-direction:column;box-shadow:4px 0 30px rgba(20,30,45,.18);}
 .drawer.show{transform:translateX(0);}
 .drawer-head{padding:18px 20px 12px;border-bottom:1px solid var(--line);}
 .drawer-head h2{margin:0 0 10px;font-size:1rem;font-weight:800;letter-spacing:.02em;}
