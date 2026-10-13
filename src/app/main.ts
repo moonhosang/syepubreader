@@ -7,6 +7,7 @@ import { openFile } from "../open";
 import { mountReader } from "../reader/mount";
 import { clearCurrent, loadCurrent, saveCurrent } from "./book-store";
 import { addReaderActions } from "./reader-actions";
+import { listenForExtensionFiles } from "./extension-bridge";
 
 const root = document.documentElement;
 const drop = document.getElementById("drop") as HTMLElement;
@@ -75,6 +76,9 @@ drop.addEventListener("drop", (e) => {
   e.preventDefault();
   void openFromHome(e.dataTransfer?.files?.[0]);
 });
+
+// 크롬 확장이 넘겨준 파일 — 읽는 중이면 그 책으로 교체, 첫 화면이면 바로 열기(모듈 최상단에서 등록: 확장 content.js 보다 먼저 준비)
+listenForExtensionFiles((file) => void (document.querySelector(".page") ? switchTo(file) : openFromHome(file)));
 
 // 시작: 보관된 책이 있으면 바로 리더로(첫 화면은 확인 끝날 때까지 숨김 — index.html 의 .booting)
 (async () => {

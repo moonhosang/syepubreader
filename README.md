@@ -43,6 +43,16 @@ SAMPLE_EPUB_DIR=/path/to/epubs npm run e2e # 실 EPUB 회귀(playwright) — 샘
 | `src/export/` | 독립 실행 HTML(셸·폰트·그림 내장 단일 파일) |
 | `cli/epub-to-html.ts` | 같은 코드로 EPUB → 독립 실행 HTML (`npm run epub-to-html -- <책.epub> <출력폴더>`) — 출판 파이프라인 변환본의 정본 |
 
+## 크롬 확장 (선택)
+
+웹의 `.epub` 링크를 우클릭 → **Open in syepubreader** 로 바로 여는 얇은 확장.
+
+```bash
+npm run ext:build      # → dist-ext/ (설치 폴더) + dist-ext/syepubreader-extension-<버전>.zip (웹스토어 업로드용)
+```
+- 직접 설치: `chrome://extensions` → 개발자 모드 → **압축해제된 확장 프로그램 로드** → `dist-ext` 선택
+- 웹스토어 등록: [store-assets/listing.md](store-assets/listing.md) · 점검표 [docs/chrome-web-store-readiness.md](docs/chrome-web-store-readiness.md) · 개인정보 [PRIVACY.md](PRIVACY.md)
+
 ## 라이선스
 
 MIT. 번들 폰트 JetBrains Mono 는 SIL OFL 1.1.

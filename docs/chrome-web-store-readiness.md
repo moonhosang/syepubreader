@@ -21,13 +21,21 @@
 |---|---|---|---|
 | B1 | 개인정보 처리방침 URL | ✅ | `PRIVACY.md` → https://github.com/moonhosang/syepubreader/blob/main/PRIVACY.md |
 | B2 | 데이터 공개(Data usage) | ✅ | "수집 안 함". 단, 기기 내 저장(IndexedDB: 현재 책, localStorage: 읽기 위치·설정)은 처리방침에 명시 |
-| B3 | 단일 목적 | ⏳ | "EPUB 링크/파일을 syepubreader 리더로 연다" 한 문장으로 기술 |
-| B4 | 권한 최소화 | ⏳ | `contextMenus` 만 필수. 다른 사이트 파일 받기는 `optional_host_permissions` 로 **클릭 시점에 그 사이트만** 요청(설치 시 광범위 권한 요구 금지 — 심사 지연·거절 사유) |
-| B5 | 아이콘 16/32/48/128 | ⏳ | 없음 → 제작 필요(PWA 아이콘과 공용) |
-| B6 | 스크린샷 1280×800 ≥1 | ⏳ | **저작권 없는 책으로 촬영**(퍼블릭 도메인 EPUB, 예: Project Gutenberg). 현재 테스트 샘플(상용 도서) 표지·본문 사용 금지 |
-| B7 | 상표 | ⏳ | 이름·설명에 "Chrome"·"Google" 오인 표현 금지(“for Chrome” 정도만 허용) |
+| B3 | 단일 목적 | ✅ | "EPUB 링크/파일을 syepubreader 리더로 연다" 한 문장으로 기술 |
+| B4 | 권한 최소화 | ✅ | `contextMenus` 만 필수. 다른 사이트 파일 받기는 `optional_host_permissions` 로 **클릭 시점에 그 사이트만** 요청(설치 시 광범위 권한 요구 금지 — 심사 지연·거절 사유) |
+| B5 | 아이콘 16/32/48/128 | ✅ | `extension/icon.svg` → 빌드 시 PNG 렌더(PWA 공용 원본) |
+| B6 | 스크린샷 1280×800 ≥1 | ✅ | **저작권 없는 책으로 촬영**(퍼블릭 도메인 EPUB, 예: Project Gutenberg). 현재 테스트 샘플(상용 도서) 표지·본문 사용 금지 |
+| B7 | 상표 | ✅ | 이름·설명에 "Chrome"·"Google" 오인 표현 금지(“for Chrome” 정도만 허용) |
 
-## C. 확장 제작 시 체크 (⏳)
+## C. 확장 (제작 완료 — 2026-10-13)
+
+- `extension/`(manifest 템플릿·background·content·icon.svg) → `npm run ext:build` → `dist-ext/`(압축해제 설치용) + 업로드 zip
+- 권한: `contextMenus`·`activeTab` 필수, 다른 사이트는 `optional_host_permissions` 를 클릭 시점에 그 출처만 요청. content script 는 앱 출처만
+- 앱 연동: `src/app/extension-bridge.ts`(같은 창·같은 출처·source/type 검증)
+- 회귀: `tests/e2e/extension.spec.ts` — 확장 설치 크로미움에서 다른 사이트 EPUB → 앱 탭 열림
+- 상점 문구·권한 사유·스크린샷: `store-assets/listing.md` (스크린샷 책 = 퍼블릭 도메인 Alice)
+
+### 원 체크리스트
 
 - 매니페스트: `manifest_version: 3`, `minimum_chrome_version`, `version` 규칙(올림 필수)
 - 앱 연동 진입점: 웹앱에 "메시지로 받은 파일 열기"(확장 → 앱 탭 `postMessage`) — 출처(origin) 검증 필수

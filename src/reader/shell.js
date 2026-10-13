@@ -82,7 +82,7 @@ function readMin(txt){return Math.max(1,Math.round((txt||"").replace(/\s+/g,"").
 var arts=[].slice.call(D.querySelectorAll("article.doc"));
 arts.forEach(function(a){
   var cover=a.querySelector(".chapter-cover");
-  if(cover){var m=readMin(a.innerText);cover.appendChild(el("div","ch-readtime","🕒 약 "+m+"분 분량"));}
+  if(cover){var m=readMin(a.innerText);var ko=((root.getAttribute("lang")||"ko").slice(0,2)==="ko");cover.appendChild(el("div","ch-readtime",ko?"🕒 약 "+m+"분 분량":"🕒 ~"+m+" min read"));}
 });
 
 /* drawer TOC */

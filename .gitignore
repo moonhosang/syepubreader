@@ -5,3 +5,4 @@ coverage/
 test-results/
 *.log
 .DS_Store
+dist-ext/

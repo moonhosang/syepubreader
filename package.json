@@ -12,7 +12,8 @@
     "preview": "vite preview",
     "typecheck": "tsc",
     "e2e": "playwright test",
-    "epub-to-html": "tsx cli/epub-to-html.ts"
+    "epub-to-html": "tsx cli/epub-to-html.ts",
+    "ext:build": "node scripts/build-extension.mjs"
   },
   "license": "MIT",
   "type": "module",
