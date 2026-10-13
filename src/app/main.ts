@@ -20,7 +20,7 @@ function showStatus(msg: string, error = false): void {
 
 async function read(file: File): Promise<void> {
   const book = await openFile(file);
-  mountReader(book);
+  await mountReader(book);
   addReaderActions({ lang: book.meta.language, onOpen: switchTo, onClose: closeBook });
 }
 

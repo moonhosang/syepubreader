@@ -2,6 +2,8 @@
 "use strict";
 var D=document, root=D.documentElement, body=D.body;
 var KEY="bookreader:"+(root.getAttribute("data-book-key")||location.pathname.split("/").pop()||"book");  /* data-book-key: 한 주소에서 여러 책을 여는 앱(syepubreader)이 책별 저장키를 지정 */
+/* 텍스트를 HTML 로 끼울 때 반드시 경유 — 장 제목 등 책 내용은 신뢰 불가(목차에 <img onerror> 같은 제목을 심은 EPUB 의 스크립트 실행 차단) */
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 function el(tag,cls,html){var e=D.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e;}
 function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v);}catch(e){return null;}}
 function applyTheme(t){if(t)root.setAttribute("data-theme",t);}
@@ -103,7 +105,7 @@ arts.forEach(function(a){
   var num=cover?((cover.querySelector(".ch-num")||{}).textContent||"").trim():"";
   var grp=el("div","toc-chap");
   var ta=el("a","tc-title");ta.href="#"+a.id;ta.dataset.target=a.id;
-  ta.innerHTML=(num?'<span class="tc-rt">'+num+'</span> ':'')+(title||a.id)+' <span class="tc-rt">· '+readMin(a.innerText)+'분</span>';
+  ta.innerHTML=(num?'<span class="tc-rt">'+esc(num)+'</span> ':'')+esc(title||a.id)+' <span class="tc-rt">· '+readMin(a.innerText)+(_KO?'분':' min')+'</span>';
   grp.appendChild(ta);tocLinks.push(ta);
   [].forEach.call(a.querySelectorAll(".sec-head[id],.sub[id]"),function(h){
     var isSub=h.classList.contains("sub");

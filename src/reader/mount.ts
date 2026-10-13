@@ -4,13 +4,12 @@
  * 파일로 저장된 책(pipeline 산출물)과 이 앱에서 연 책이 같은 셸을 그대로 공유한다.
  */
 import shellCss from "./shell.css?raw";
-import shellJs from "./shell.js?raw";
 import type { Book } from "../book/model";
 import { assembleBody } from "../book/assemble";
 
 const FONT_PLACEHOLDER = "data:font/woff2;base64,__JETBRAINS_WOFF2_B64__";
 
-export function mountReader(book: Book): void {
+export async function mountReader(book: Book): Promise<void> {
   const root = document.documentElement;
   root.setAttribute("lang", book.meta.language || "en");
   root.setAttribute("data-ten", book.meta.title);
@@ -34,7 +33,6 @@ export function mountReader(book: Book): void {
   document.body.replaceChildren(page);
 
   // 셸은 자기 실행형 스크립트 — 본문이 꽂힌 뒤 실행해야 .page 를 찾는다.
-  const script = document.createElement("script");
-  script.textContent = shellJs;
-  document.body.appendChild(script);
+  // 인라인 <script> 주입 금지: 확장(MV3 script-src 'self')·배포 CSP 에서 차단됨 → 번들된 모듈로 동적 import(한 페이지 1회 실행).
+  await import("./shell.js");
 }
