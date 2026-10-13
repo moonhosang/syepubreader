@@ -31,6 +31,44 @@ async function makeEpub(wrap = ""): Promise<JSZip> {
   return JSZip.loadAsync(await z.generateAsync({ type: "uint8array" }));
 }
 
+/** 표지 단서가 메타데이터·파일명에 없는 EPUB2 + 짧은 각주 문서 + 작은 제목. */
+async function makeBareEpub(withGuide: boolean): Promise<JSZip> {
+  const z = new JSZip();
+  z.file("META-INF/container.xml", `<?xml version="1.0"?><container xmlns="urn:oasis:names:tc:opendocument:xmlns:container" version="1.0"><rootfiles><rootfile full-path="c.opf"/></rootfiles></container>`);
+  z.file("c.opf", `<?xml version="1.0"?><package xmlns="http://www.idpf.org/2007/opf" version="2.0">
+<metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Bare</dc:title></metadata>
+<manifest>
+ <item id="p0" href="p0.html" media-type="application/xhtml+xml"/>
+ <item id="p1" href="p1.html" media-type="application/xhtml+xml"/>
+ <item id="fn" href="p2.html" media-type="application/xhtml+xml"/>
+ <item id="i1" href="image-2DAIF.png" media-type="image/png"/>
+</manifest>
+<spine><itemref idref="p0"/><itemref idref="p1"/><itemref idref="fn"/></spine>
+${withGuide ? '<guide><reference type="cover" href="p0.html"/></guide>' : ""}</package>`);
+  z.file("p0.html", page(`<div><img src="image-2DAIF.png"/></div>`));
+  z.file("p1.html", page(`<p>${lorem}</p><h3>Small heading</h3><p>${lorem}</p>`));
+  z.file("p2.html", page(`<p>[←3] A short footnote kept as content.</p>`));
+  z.file("image-2DAIF.png", new Uint8Array([0x89, 0x50, 0x4e, 0x47]));
+  return JSZip.loadAsync(await z.generateAsync({ type: "uint8array" }));
+}
+
+describe("openEpub — 단서 없는 책", () => {
+  it("짧은 각주 문서를 버리지 않는다(빈 페이지 = 글자 20자 미만 + 그림 없음만)", async () => {
+    const book = await openEpub(await makeBareEpub(false), "bare.epub");
+    expect(book.chapters.some((c) => c.html.includes("A short footnote kept as content."))).toBe(true);
+  });
+
+  it("작은 제목(sub)에도 id — 목차 서랍 이동 앵커", async () => {
+    const book = await openEpub(await makeBareEpub(false), "bare.epub");
+    expect(book.chapters.map((c) => c.html).join("")).toMatch(/<h3 class="sub" id="ch\d+-s1">Small heading<\/h3>/);
+  });
+
+  it.each([true, false])("표지 마지막 방법(guide=%s) — guide 참조 또는 첫 페이지의 그림 1장", async (withGuide) => {
+    const book = await openEpub(await makeBareEpub(withGuide), "bare.epub");
+    expect(book.coverAsset).toBe("image-2DAIF.png");
+  });
+});
+
 describe("openEpub", () => {
   it("메타·장·번호·소스 앵커·자산·표지를 해석", async () => {
     const book = await openEpub(await makeEpub(), "x.epub");

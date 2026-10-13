@@ -137,6 +137,10 @@ pre.collapsible.open{max-height:none;}
 .figimg{margin:1.9em auto;max-width:var(--wide);text-align:center;}
 .figimg img{max-width:100%;height:auto;border:1px solid var(--line);border-radius:10px;background:var(--raise);padding:6px;box-shadow:0 1px 4px rgba(20,30,45,.07);cursor:zoom-in;transition:box-shadow .15s;}
 .figimg img:hover{box-shadow:0 4px 18px rgba(31,78,121,.22);}
+/* 다크 모드 그림 판 = 흰 종이 고정 — 투명 PNG(검은 글씨·선 도표)가 어두운 배경에 묻혀 안 보이던 문제.
+   invert 금지(사진·컬러 도표가 망가짐). 대신 밝기만 살짝 낮춰 눈부심 완화. 표지·확대보기도 같은 규칙. */
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .figimg img,:root:not([data-theme="light"]) .book-cover img{background:#fff;filter:brightness(.92);}}
+:root[data-theme="dark"] .figimg img,:root[data-theme="dark"] .book-cover img{background:#fff;filter:brightness(.92);}
 .cap{margin-top:.7em;font-size:var(--t-caption);color:var(--ink-faint);line-height:1.5;}
 .fig-note{max-width:var(--maxw);margin:.7em auto 0;text-align:left;background:var(--accent-wash);border:1px solid var(--line);border-radius:10px;padding:12px 16px;font-size:var(--t-small);color:var(--ink-soft);}
 .fig-note b{color:var(--accent-deep);margin-right:.2em;}

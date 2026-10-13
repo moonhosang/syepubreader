@@ -11,7 +11,8 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "typecheck": "tsc",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "epub-to-html": "tsx cli/epub-to-html.ts"
   },
   "license": "MIT",
   "type": "module",
@@ -21,8 +22,10 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
+    "@types/jsdom": "^30.0.0",
     "@types/node": "^26.6.5",
     "jsdom": "^30.1.2",
+    "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.3.4",
     "vitest": "^5.0.4"

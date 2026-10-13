@@ -135,7 +135,8 @@ export function convertChapter(xhtml: string, opts: ConvertOptions): string {
         bodyStarted = true;
       }
       if (!txt) return;
-      const id = head.cls === "sec-head" ? ` id="${opts.idPrefix}-s${++secNo}"` : "";
+      // 절(sec-head)·작은 제목(sub) 모두 id — 목차 페이지(절)·셸 목차 서랍(.sec-head[id],.sub[id])의 이동 앵커
+      const id = head.cls === "sec-head" || head.cls === "sub" ? ` id="${opts.idPrefix}-s${++secNo}"` : "";
       out.push(`<${head.level} class="${head.cls}"${id}>`);
       walkChildren(el);
       out.push(`</${head.level}>\n`);
@@ -172,10 +173,24 @@ export function convertChapter(xhtml: string, opts: ConvertOptions): string {
     .trim();
 }
 
-/** 장 문서의 본문 글자 수(앞부속·빈 구분지 판별용). */
-export function textLength(xhtml: string): number {
+export interface DocStats {
+  /** 본문 글자 수(공백 정규화) — 빈 구분지 판별용. */
+  textLen: number;
+  /** 본문 그림 수와 첫 그림 경로(표지 추정용). */
+  imgCount: number;
+  firstImg?: string;
+}
+
+/** 장 문서 통계 — 앞부속·빈 페이지 판별과 표지 추정에 쓴다. */
+export function docStats(xhtml: string, docPath: string): DocStats {
   const body = parseXhtml(xhtml).querySelector("body");
-  if (!body) return 0;
+  if (!body) return { textLen: 0, imgCount: 0 };
   body.querySelectorAll("script,style").forEach((n) => n.remove());
-  return (body.textContent || "").length;
+  const imgs = Array.from(body.querySelectorAll("img[src]"));
+  const first = imgs[0]?.getAttribute("src");
+  return {
+    textLen: (body.textContent || "").replace(/\s+/g, " ").trim().length,
+    imgCount: imgs.length,
+    firstImg: first ? resolvePath(docPath, first) : undefined,
+  };
 }

@@ -39,7 +39,9 @@ SAMPLE_EPUB_DIR=/path/to/epubs npm run e2e # 실 EPUB 회귀(playwright) — 샘
 | `src/open/` | 파일 판별(내용 기반) · EPUB 어댑터(OPF·spine·목차·표지) |
 | `src/book/` | 공통 Book 모델 · 장 변환(허용 목록 재구성) · 조립·정제(DOMPurify) |
 | `src/reader/` | 리더 셸(`shell.js`/`shell.css` — 이 저장소가 정본) · 마운트 |
-| `src/app/` | 첫 화면(파일 고르기/끌어다 놓기) |
+| `src/app/` | 첫 화면·책 바꾸기·읽던 책 보관(IndexedDB) |
+| `src/export/` | 독립 실행 HTML(셸·폰트·그림 내장 단일 파일) |
+| `cli/epub-to-html.ts` | 같은 코드로 EPUB → 독립 실행 HTML (`npm run epub-to-html -- <책.epub> <출력폴더>`) — 출판 파이프라인 변환본의 정본 |
 
 ## 라이선스
 

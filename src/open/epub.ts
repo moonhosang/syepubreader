@@ -4,7 +4,7 @@
  */
 import JSZip from "jszip";
 import type { Book, Chapter } from "../book/model";
-import { convertChapter, parseXhtml, resolvePath, textLength } from "../book/convert";
+import { convertChapter, docStats, parseXhtml, resolvePath, type DocStats } from "../book/convert";
 
 interface ManifestItem {
   id: string;
@@ -43,9 +43,14 @@ const TITLE_SKIP =
 /** 'index'(index_split 등)는 넣지 않는다 — 색인은 ix\d 로만(분할 본문 오탐 방지). */
 const FILE_SKIP = /(^|[/\\])(cover|toc\d*|nav\d*|titlepage\d*|copyright[-_]?page\d*|colophon\d*|dedication\d*|eula|ix\d+|frontmatter)/i;
 
-function isContent(path: string, title: string, textLen: number): boolean {
+/**
+ * 빈 페이지 = 본문 글자 20자 미만이면서 그림도 없음(표지 껍데기·구분지).
+ * ⚠ 글자 수 상한을 높게 잡지 말 것: 각주만 따로 쪼갠 짧은 문서([←3] …)·짧은 부(Part) 소개가 통째로 빠진다
+ *   (구 파이썬 변환기는 <head> 까지 세어 우연히 살렸던 것 — TS 이식 후 차분 테스트에서 발견).
+ */
+function isContent(path: string, title: string, stats: DocStats): boolean {
   const base = path.split("/").pop()!.toLowerCase();
-  if (textLen < 200) return false;
+  if (stats.textLen < 20 && stats.imgCount === 0) return false;
   if (!/\.(xhtml|html|htm)$/.test(base)) return false;
   if (CONTENT_HINT.test(title)) return true;
   if (title && TITLE_SKIP.test(title)) return false;
@@ -72,6 +77,39 @@ async function readText(zip: JSZip, path: string): Promise<string | null> {
 
 function unescapeAttr(s: string): string {
   return s.replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+}
+
+/**
+ * 표지 마지막 방법(메타데이터·파일명 단서가 없을 때, EPUB 관례):
+ * ① <guide><reference type="cover"> 가 가리키는 문서의 첫 그림 ② spine 맨 앞 문서가 "그림 1장 + 글자 거의 없음"이면 그 그림.
+ */
+async function coverFromPages(
+  zip: JSZip,
+  opf: Document,
+  opfPath: string,
+  spine: ManifestItem[],
+  statsOf: Map<string, DocStats>,
+  byPath: Map<string, ManifestItem>,
+): Promise<ManifestItem | undefined> {
+  const isImage = (p?: string) => (p ? byPath.get(p)?.mediaType.startsWith("image/") : false);
+  const ref = byLocal(opf, "reference").find((r) => (r.getAttribute("type") || "").toLowerCase() === "cover");
+  const refHref = ref?.getAttribute("href");
+  if (refHref) {
+    const docPath = resolvePath(opfPath, refHref);
+    const text = await readText(zip, docPath);
+    const img = text ? docStats(text, docPath).firstImg : undefined;
+    if (isImage(img)) return byPath.get(img!);
+  }
+  const first = spine[0];
+  if (first) {
+    let st = statsOf.get(first.path);
+    if (!st) {
+      const text = await readText(zip, first.path);
+      st = text ? docStats(text, first.path) : undefined;
+    }
+    if (st && st.imgCount === 1 && st.textLen < 20 && isImage(st.firstImg)) return byPath.get(st.firstImg!);
+  }
+  return undefined;
 }
 
 export async function openEpub(zip: JSZip, fileName: string): Promise<Book> {
@@ -146,6 +184,7 @@ export async function openEpub(zip: JSZip, fileName: string): Promise<Book> {
 
   // 5) 본문 장 — 앞부속 제외 + 장 번호 + 변환
   const chapters: Chapter[] = [];
+  const statsOf = new Map<string, DocStats>();
   let chapterNo = 0;
   let idx = 0;
   for (const item of spine) {
@@ -153,7 +192,9 @@ export async function openEpub(zip: JSZip, fileName: string): Promise<Book> {
     const text = await readText(zip, item.path);
     if (text == null) continue;
     let title = (toc.get(item.path) || "").replace(/\s+/g, " ").trim();
-    if (!isContent(item.path, title, textLength(text))) continue;
+    const stats = docStats(text, item.path);
+    statsOf.set(item.path, stats);
+    if (!isContent(item.path, title, stats)) continue;
     if (!title) title = `${idx}`;
     let num: string | undefined;
     if (/^\s*(?:chapter\s+)?(\d+)[.\s:]/i.test(title)) {
@@ -174,7 +215,8 @@ export async function openEpub(zip: JSZip, fileName: string): Promise<Book> {
   const coverItem =
     images.find((m) => /\bcover-image\b/.test(m.properties)) ||
     (coverMeta && coverMeta.mediaType.startsWith("image/") ? coverMeta : undefined) ||
-    images.filter((m) => coverScore(m.path) > 0).sort((a, b) => coverScore(b.path) - coverScore(a.path))[0];
+    images.filter((m) => coverScore(m.path) > 0).sort((a, b) => coverScore(b.path) - coverScore(a.path))[0] ||
+    (await coverFromPages(zip, opf, opfPath, spine, statsOf, byPath));
   if (coverItem) used.add(coverItem.path);
 
   const assets = new Map<string, Blob>();
