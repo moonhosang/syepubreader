@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ko">
+<html lang="ko" class="booting">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -20,6 +20,8 @@
       #drop span { color: var(--soft); font-size: .9rem; }
       #status { min-height: 1.6em; margin-top: 16px; color: var(--soft); }
       #status.err { color: var(--err); }
+      /* 보관된 책 확인 중엔 첫 화면을 숨겨 깜빡임 방지(main.ts 가 확인 후 제거) */
+      .booting main { visibility: hidden; }
     </style>
   </head>
   <body>

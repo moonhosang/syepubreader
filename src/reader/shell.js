@@ -206,7 +206,7 @@ function updatePageInd(){
   if(isPager()&&pageEl){
     var pitch=pagePitch();if(pitch<=0){pageInd.classList.remove("show");return;}
     var total=Math.max(1,Math.round(pageEl.scrollWidth/pitch)),cur=Math.min(total,Math.round(pageEl.scrollLeft/pitch)+1);
-    pageInd.textContent=cur+" / "+total+(root.classList.contains("spread")?" 펼침":" 쪽");pageInd.classList.add("show");return;}
+    pageInd.textContent=cur+" / "+total+(_KO?(root.classList.contains("spread")?" 펼침":" 쪽"):"")  /* 영어책은 숫자만(한국어 라벨은 크롬 번역이 다시 번역) */;pageInd.classList.add("show");return;}
   pageInd.classList.remove("show");}
 /* 폭(양옆폭/가운데폭/--wide)/리사이즈로 .page 폭이 바뀌면 pitch 가 바뀜 → 현재 scrollLeft 를 가장 가까운 페이지 경계로 재정렬(경계 어긋남 방지). */
 function realignPager(){if(!isPager()||!pageEl)return;var pitch=pagePitch();if(pitch<=0)return;var idx=Math.round(pageEl.scrollLeft/pitch);var prev=pageEl.style.scrollBehavior;pageEl.style.scrollBehavior="auto";pageEl.scrollLeft=idx*pitch;pageEl.style.scrollBehavior=prev;updatePageInd();}
@@ -314,6 +314,12 @@ var fbSet=el("button","fab","⚙");fbSet.title="읽기 설정";fbSet.setAttribut
 var fbTop=el("button","fab to-top","↑");fbTop.title="맨 위로";fbTop.setAttribute("aria-label","맨 위로");
 rowMain.appendChild(fbToc);rowMain.appendChild(fbSet);rowMain.appendChild(fbTop);
 fabs.appendChild(rowNav);fabs.appendChild(rowMain);body.appendChild(fabs);
+/* FAB 평소엔 희미(본문 방해 최소) → 탭/호버/키보드 포커스 시 선명. 터치는 :hover 가 없으니 누를 때 awake 를 주고 2.5초 뒤 다시 희미.
+   설정 패널·목차 서랍이 열려 있는 동안은 선명 유지(무엇을 눌렀는지 보이게). 버튼은 희미할 때도 첫 탭에 바로 동작. */
+var fabWakeT=null;
+function fabSleep(){if(controls.classList.contains("show")||drawer.classList.contains("show")){fabWakeT=setTimeout(fabSleep,2500);return;}fabs.classList.remove("awake");}
+function fabWake(){fabs.classList.add("awake");clearTimeout(fabWakeT);fabWakeT=setTimeout(fabSleep,2500);}
+fabs.addEventListener("pointerdown",fabWake);fabs.addEventListener("focusin",fabWake);
 backBtnRef=fbBack;updateBack();
 fbBack.addEventListener("click",goBack);
 fbPrev.addEventListener("click",function(){goPage(-1);});

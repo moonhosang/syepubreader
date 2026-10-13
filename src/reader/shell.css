@@ -184,7 +184,10 @@ hr.sep{border:none;border-top:1px solid var(--line);max-width:var(--wide);margin
 .page-ind.show{opacity:1;}
 
 /* ===== FAB stack ===== */
-.fab-stack{position:fixed;right:20px;bottom:20px;z-index:120;display:flex;flex-direction:column;gap:12px;align-items:flex-end;}
+.fab-stack{position:fixed;right:20px;bottom:20px;z-index:120;display:flex;flex-direction:column;gap:12px;align-items:flex-end;opacity:.32;transition:opacity .3s ease;}
+/* 평소 희미 → 호버(마우스 기기만: 터치의 '끈적한 hover' 방지)·키보드 포커스·탭(awake, shell.js) 시 선명 */
+@media (hover:hover){.fab-stack:hover{opacity:1;transition-duration:.12s;}}
+.fab-stack:has(:focus-visible),.fab-stack.awake{opacity:1;transition-duration:.12s;}  /* focus-within 금지: 마우스로 누른 버튼이 포커스를 쥔 채 남아 영영 선명해짐 → 키보드 포커스(:focus-visible)만 */
 .fab-row{display:flex;gap:12px;}
 .fab.nav{font-size:1.35rem;}
 .fab{width:46px;height:46px;border-radius:50%;border:1px solid var(--line-strong);background:var(--chrome);backdrop-filter:blur(8px);color:var(--accent);font-size:1.15rem;cursor:pointer;box-shadow:0 2px 10px rgba(20,30,45,.18);display:flex;align-items:center;justify-content:center;transition:transform .2s,background .2s,color .2s,opacity .25s;}
