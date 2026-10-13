@@ -169,7 +169,10 @@ export function convertChapter(xhtml: string, opts: ConvertOptions): string {
   return out
     .join("")
     .replace(/<p>\s*<\/p>\n?/g, "")
-    .replace(/\n{3,}/g, "\n\n")
+    // 빈 줄 정리는 코드 블록 바깥에만 — <pre> 안의 연속 빈 줄은 코드의 일부(줄이면 원문과 달라짐)
+    .split(/(<pre[\s\S]*?<\/pre>)/)
+    .map((seg, i) => (i % 2 ? seg : seg.replace(/\n{3,}/g, "\n\n")))
+    .join("")
     .trim();
 }
 

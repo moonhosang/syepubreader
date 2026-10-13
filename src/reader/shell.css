@@ -232,11 +232,19 @@ hr.sep{border:none;border-top:1px solid var(--line);max-width:var(--wide);margin
 :root.spread .page :where(p,ul,ol,blockquote,.note,.secsum,.takeaway,.synopsis,.covers,.readable-text,.fig-note,.sec>*,.doc>*){max-width:none;margin-left:0;margin-right:0;}
 /* 큰 블록은 페이지(칼럼) 높이에 맞춰 축소해 오버플로 클립 완화 */
 :root.paged .figimg img,:root.spread .figimg img{max-height:72vh;max-height:72dvh;width:auto;}
-/* pager 코드블록 최대 높이 = 상하여백 뺀 실제 페이지 사용높이. 넘치면 블록 내부에서 세로 스크롤(잘림 방지·가로 스와이프와 무관). */
-:root.paged .listing,:root.paged pre.code,:root.paged pre.spec,:root.spread .listing,:root.spread pre.code,:root.spread pre.spec{max-height:calc(100vh - var(--gut-top) - var(--gut-bottom) - 2.4em);max-height:calc(100dvh - var(--gut-top) - var(--gut-bottom) - 2.4em);overflow:auto;}
+/* pager 코드블록 = 쪽을 넘어 이어짐(높이 제한·내부 스크롤 없음) — 내부 스크롤은 휠이 쪽 넘김에 쓰여 PC 에서 못 굴리고,
+   책에서 '상자 안 스크롤'은 조작이 두 겹이 된다. 짧은 블록은 한 쪽에 통째로(avoid 는 선호 — 단보다 길면 브라우저가 나눔),
+   나뉜 조각마다 여백·테두리를 따로 그려(clone) '이어지는 상자'로 보이게. overflow 는 visible(숨김/스크롤 상자는 쪼개지지 않음). */
+:root.paged .listing,:root.paged pre.code,:root.paged pre.spec,:root.spread .listing,:root.spread pre.code,:root.spread pre.spec{max-height:none;overflow:visible;break-inside:avoid;-webkit-box-decoration-break:clone;box-decoration-break:clone;orphans:2;widows:2;}
 /* 코드 줄바꿈 정책(모드별): 연속=가로 스크롤(정확한 서식) / 책·페이지=소프트랩 —
    pager 는 가로 스크롤이 페이지 스와이프와 충돌하므로 줄을 접어 잘림·충돌을 없앤다. */
-:root.paged pre.code,:root.spread pre.code,:root.paged pre.spec,:root.spread pre.spec{white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;overflow-x:hidden;}
+:root.paged pre.code,:root.spread pre.code,:root.paged pre.spec,:root.spread pre.spec{white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;overflow-x:visible;}
+/* 코드 줄(shell.js splitCodeLines) — 접힌 줄은 2ch 내어쓰기. 연속 모드(줄바꿈 없음)에선 첫 줄만 있어 효과 0. 빈 줄 높이 유지(복사엔 안 섞이는 가상 문자). */
+pre.code .ln,pre.spec .ln{display:block;padding-left:2ch;text-indent:-2ch;}
+pre.code .ln:empty::before,pre.spec .ln:empty::before{content:"b";}
+/* 책·페이지: 접힌 줄 앞에 ↪ — 줄 높이(1.6em) 간격 반복 무늬를 왼쪽 여백(2ch)에 깔고, 첫 줄 칸만 상자 배경색으로 덮는다(원래 줄 시작엔 표시 없음). */
+:root.paged pre.code .ln,:root.spread pre.code .ln{background:linear-gradient(var(--code-bg),var(--code-bg)) 0 0/2ch 1.6em no-repeat,url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%237b8ea3' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 3v4a3 3 0 0 0 3 3h6M10 7l3 3-3 3'/%3E%3C/svg%3E") 0 0/2ch 1.6em repeat-y;}
+:root.paged pre.spec .ln,:root.spread pre.spec .ln{background:linear-gradient(var(--spec-bg),var(--spec-bg)) 0 0/2ch 1.6em no-repeat,url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%237b8ea3' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 3v4a3 3 0 0 0 3 3h6M10 7l3 3-3 3'/%3E%3C/svg%3E") 0 0/2ch 1.6em repeat-y;}
 :root.paged .chapter-cover,:root.spread .chapter-cover{break-before:column;padding-top:4vh;}
 :root.paged .page::-webkit-scrollbar,:root.spread .page::-webkit-scrollbar{height:10px;}
 :root.paged .page::-webkit-scrollbar-thumb,:root.spread .page::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:10px;}

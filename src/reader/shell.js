@@ -41,6 +41,26 @@ D.addEventListener("keydown",function(e){if(e.key==="Escape")closeLb();});
   });
 });
 
+/* 코드 줄 나누기 — pre 의 각 줄을 <span class="ln"> 블록으로(구문 강조 등 안쪽 태그는 줄마다 얕게 복제해 유지).
+   책·페이지 모드에서 접힌 줄을 내어쓰기 + ↪ 로 표시하기 위한 단위(CSS 는 '접힌 줄'을 직접 고를 수 없음).
+   복사 버튼은 innerText 를 쓰므로 블록 줄 사이에 줄바꿈이 그대로 들어간다. 복사 버튼을 붙이기 전에 실행해야 한다. */
+function splitCodeLines(pre){
+  if(pre.querySelector(":scope > .ln"))return;
+  var lines=[D.createElement("span")];
+  function wrap(node,anc){for(var i=anc.length-1;i>=0;i--){var c=anc[i].cloneNode(false);c.removeAttribute("id");c.appendChild(node);node=c;}return node;}
+  function walk(n,anc){
+    if(n.nodeType===3){n.nodeValue.split("\n").forEach(function(part,i){if(i>0)lines.push(D.createElement("span"));if(part)lines[lines.length-1].appendChild(wrap(D.createTextNode(part),anc));});return;}
+    if(n.nodeType!==1)return;
+    if(n.tagName==="BR"){lines.push(D.createElement("span"));return;}
+    var a=anc.concat([n]);[].slice.call(n.childNodes).forEach(function(c){walk(c,a);});
+  }
+  [].slice.call(pre.childNodes).forEach(function(c){walk(c,[]);});
+  if(lines.length>1&&!lines[lines.length-1].childNodes.length)lines.pop();  /* 끝 줄바꿈 */
+  pre.textContent="";
+  lines.forEach(function(l){l.className="ln";pre.appendChild(l);});
+}
+[].forEach.call(D.querySelectorAll("pre.code,pre.spec"),splitCodeLines);
+
 /* copy buttons */
 function addCopy(container,textEl){
   var b=el("button","copy-btn","복사");
