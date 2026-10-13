@@ -161,17 +161,38 @@ function peekFlash(){var h=Math.max(60,Math.round(window.innerHeight*0.15));peek
 /* 넘김: 책(spread)=가로 1펼침, 전체페이지(paged)=세로 1화면(peek 없음), 연속=pageFactor(0.85·peek). */
 /* 가로 페이저 이동 — 현재 위치의 가장 가까운 칼럼을 기준으로 '절대 목표'를 계산해 scrollTo.
    상대 scrollBy 가 빠른 연타/스무스 중첩/리플로우에서 누적 실패해 경계를 벗어나던 버그 해소(항상 칼럼 경계 정렬). cols=이동할 칼럼 수. */
-function pagerGo(dir,cols){
-  if(!pageEl)return;
+function pagerGo(dir,cols,from){
+  if(!pageEl)return false;
   var N=root.classList.contains("spread")?2:1;
-  var colPitch=pagePitch()/N;if(colPitch<=0)return;
+  var colPitch=pagePitch()/N;if(colPitch<=0)return false;
   var max=Math.max(0,pageEl.scrollWidth-pageEl.clientWidth);
-  /* 빠른 연타: 스무스 이동 중(목표 미도달)이면 '현재 위치'가 아니라 '진행 중인 목표'를 기준으로 누적 — 이동 중 위치를 반올림하면 반쪽 어긋난 칼럼에 멈추던 버그 방지 */
-  var base=(pagerTarget!==null&&Math.abs(pageEl.scrollLeft-pagerTarget)>1)?pagerTarget:pageEl.scrollLeft;
-  var cur=Math.round(base/colPitch);
-  pagerTarget=Math.max(0,Math.min((cur+dir*cols)*colPitch,max));
-  pageEl.scrollTo({left:pagerTarget,behavior:"smooth"});}
+  /* 빠른 연타: 넘김 진행 중이면 '현재 위치'가 아니라 '진행 중인 목표'에 누적 — 연타 수만큼 정확히, 항상 쪽 경계에 정렬 */
+  var base=(pagerTarget!==null)?pagerTarget:pageEl.scrollLeft;
+  var t=Math.max(0,Math.min((Math.round(base/colPitch)+dir*cols)*colPitch,max));
+  if(Math.abs(t-base)<1)return false;  /* 첫/끝 쪽 */
+  pagerTarget=t;turnTo(t,dir,from);return true;}
 var pagerTarget=null;
+/* 쪽 넘김 = 방향 있는 페이드 — 지금 쪽이 진행 방향으로 살짝 밀리며 사라지고(110ms) → 즉시 목표 쪽으로 이동 → 반대편에서 살짝 밀려 들어오며 나타남(170ms).
+   다음 쪽(오→왼)·이전 쪽(왼→오). 두 쪽이 한 화면에 동시에 걸리는 순간이 없어 '다음 쪽이 붙어 보이는' 다단 간격 착시가 원천적으로 없다.
+   (구: 글 띠를 1:1 로 끌고 경계에 회색 띠를 덧그림 → 본문을 가려 제거.) 동작 줄이기 설정이면 애니메이션 없이 즉시. */
+var REDUCE_MOTION=!!(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches);
+var turnAnim=null,turnPhase=0;  /* 0=정지 1=사라지는 중 2=나타나는 중 */
+function jumpTo(left){var pb=pageEl.style.scrollBehavior;pageEl.style.scrollBehavior="auto";pageEl.scrollLeft=left;pageEl.style.scrollBehavior=pb;updatePageInd();}
+function turnTo(target,dir,from){
+  if(REDUCE_MOTION||!pageEl.animate){jumpTo(target);pagerTarget=null;return;}
+  if(turnPhase===1)return;  /* 사라지는 중엔 목표(pagerTarget)만 갱신 — 나타날 때 최신 목표로 간다 */
+  var d=Math.round(Math.min(56,pageEl.clientWidth*0.05))*(dir>0?1:-1),f=from||{x:0,o:1};
+  if(turnAnim)turnAnim.cancel();
+  turnPhase=1;
+  var out=turnAnim=pageEl.animate([{transform:"translateX("+f.x+"px)",opacity:f.o},{transform:"translateX("+(-d)+"px)",opacity:0}],{duration:110,easing:"ease-in",fill:"forwards"});
+  out.onfinish=function(){
+    if(turnAnim!==out)return;
+    jumpTo(pagerTarget);turnPhase=2;
+    var inn=turnAnim=pageEl.animate([{transform:"translateX("+d+"px)",opacity:0},{transform:"translateX(0)",opacity:1}],{duration:170,easing:"ease-out"});
+    out.cancel();  /* 나타남 애니를 먼저 건 뒤 해제 — 사이에 원위치가 한 프레임 보이는 깜빡임 방지 */
+    inn.onfinish=function(){if(turnAnim===inn){turnAnim=null;turnPhase=0;pagerTarget=null;}};
+  };
+}
 /* 모드 불문 "요소로 이동" 단일 창구 — 가로 페이저에선 요소가 속한 칼럼 경계로 정렬 스크롤(반쪽 페이지 금지), 연속 모드는 기존 scrollIntoView. */
 function scrollToEl(el){
   if(!el)return;
@@ -392,60 +413,32 @@ if(pageEl){
   /* 터치 스와이프(아이패드 등): 가로 페이저에서 좌/우 스와이프 = 한 페이지 넘김.
      드래그 중엔 손가락을 따라 움직이고(라이브), 뗄 때 ±1페이지(또는 제자리)로 스냅.
      네이티브 관성 자유스크롤을 막아 '조금씩 밀리는' 현상을 없앤다. 한 손가락만 처리(핀치줌 허용). */
-  var tx=null,ty=null,tsl=0,tmoved=false;
+  var tx=null,ty=null,tmoved=false;
   /* 스와이프는 document 에서 받는다 — 책 모드 양옆 여백(.page 밖)에서 시작한 스와이프도 넘김(탭 존과 동일 범위). 셸 UI 위 제스처는 제외. */
   var SWIPE_SKIP=".fab-stack,.controls,.drawer,.drawer-overlay,.lm-nav,.lightbox,.toast";
   D.addEventListener("touchstart",function(e){
     if(!isPager()||e.touches.length!==1||(e.target.closest&&e.target.closest(SWIPE_SKIP))){tx=null;return;}
-    tx=e.touches[0].clientX;ty=e.touches[0].clientY;tsl=pageEl.scrollLeft;tmoved=false;pagerTarget=null;  /* 손 조작이 키/휠 진행 목표를 무효화 */
-    pageEl.style.scrollBehavior="auto";  /* 드래그는 1:1 즉시 추종 */
+    tx=e.touches[0].clientX;ty=e.touches[0].clientY;tmoved=false;
   },{passive:true});
+  /* 끄는 동안: 글 띠는 그대로 두고 지금 쪽만 손가락 쪽으로 살짝(최대 80px) 밀리며 흐려짐 — 넘김 방향을 몸으로 느끼게 */
+  var dragX=0,dragO=1;
   D.addEventListener("touchmove",function(e){
     if(!isPager()||tx===null||e.touches.length!==1)return;
     var dx=e.touches[0].clientX-tx,dy=e.touches[0].clientY-ty;
-    if(!tmoved&&Math.abs(dy)>Math.abs(dx)){tx=null;pageEl.style.scrollBehavior="";return;} /* 세로 제스처면 양보 */
+    if(!tmoved&&Math.abs(dy)>Math.abs(dx)){tx=null;return;} /* 세로 제스처면 양보 */
     tmoved=true;e.preventDefault();
-    pageEl.scrollLeft=tsl-dx;  /* 손가락 따라 이동 */
+    dragX=Math.max(-80,Math.min(80,dx*0.35));dragO=1-Math.min(0.5,Math.abs(dx)/700);
+    pageEl.style.transform="translateX("+dragX+"px)";pageEl.style.opacity=String(dragO);
   },{passive:false});
   D.addEventListener("touchend",function(e){
     if(!isPager()||tx===null)return;
     var dx=e.changedTouches[0].clientX-tx;tx=null;
-    pageEl.style.scrollBehavior="";  /* smooth 복원 */
-    var step=pagePitch();if(step<=0){return;}
-    var base=Math.round(tsl/step)*step;
-    var dest=(tmoved&&Math.abs(dx)>40)?(base+(dx<0?step:-step)):base;
-    var max=Math.max(0,pageEl.scrollWidth-pageEl.clientWidth);
-    pageEl.scrollTo({left:Math.max(0,Math.min(dest,max)),behavior:"smooth"});
+    if(!tmoved)return;
+    var from={x:dragX,o:dragO},turned=false;
+    if(Math.abs(dx)>40)turned=pagerGo(dx<0?1:-1,root.classList.contains("spread")?2:1,from);
+    if(!turned&&pageEl.animate&&!REDUCE_MOTION)pageEl.animate([{transform:"translateX("+dragX+"px)",opacity:dragO},{transform:"translateX(0)",opacity:1}],{duration:160,easing:"ease-out"});  /* 제자리 복귀 */
+    pageEl.style.transform="";pageEl.style.opacity="";dragX=0;dragO=1;  /* 애니메이션이 인라인보다 우선 → 걸고 나서 해제해도 튀지 않음 */
   },{passive:false});
-  /* 쪽 넘김 경계(seam) — CSS 멀티컬럼은 '쪽 안 단 간격'과 '쪽 사이 간격'을 따로 줄 수 없어(column-gap 하나),
-     넘기는 중 다음 쪽이 현재 쪽에 단 간격만큼 붙어 '글 띠가 미끄러지는' 착시가 생김. 레이아웃은 그대로 두고,
-     쪽 경계에 걸친 순간(드래그·스냅·휠/키 스무스 이동 중)에만 경계에 '넓은 틈'(책상색 띠+양쪽 종이 그림자)을 덧그린다.
-     틈 폭 = 쪽 폭 × SEAM_RATIO × sin(π·진행도) — 넘김 한가운데서 최대(쪽 폭의 1/3), 시작·끝에선 0 이라 정지 화면의 글을 가리지 않음.
-     (진짜로 쪽을 벌리는 건 다단 한계상 쪽별 컨테이너 재구성이 필요 → 이 띠는 그 '시각적 등가물'. 음영(dim)은 아이패드에서 답답해 제거.) */
-  var SEAM_RATIO=1/3;
-  var seam=el("div","turn-seam",'<i class="ts-edge"></i>');body.appendChild(seam);
-  var seamEdge=seam.children[0],seamRaf=0;
-  function drawSeam(){
-    seamRaf=0;
-    var P=isPager()?pagePitch():0;if(P<=0){seam.classList.remove("on");return;}
-    var s=pageEl.scrollLeft,off=s-Math.floor(s/P)*P;  /* 현재 쪽 시작에서 밀린 양 [0,P) */
-    if(off<2||P-off<2){seam.classList.remove("on");return;}  /* 쪽 경계에 정렬됨 = 표시 없음 */
-    var r=pageEl.getBoundingClientRect(),x=P-off-spGap()/2,p=off/P;  /* x=경계(gap 중앙)의 화면 내 위치 · p=다음 쪽 진행도 */
-    var w=Math.max(spGap(),r.width*SEAM_RATIO*Math.sin(Math.PI*p));  /* 틈 폭: 가운데서 최대·양끝 0(단 간격 이상) */
-    seam.style.left=r.left+"px";seam.style.top=r.top+"px";seam.style.width=r.width+"px";seam.style.height=r.height+"px";
-    seamEdge.style.width=w+"px";seamEdge.style.transform="translateX("+(x-w/2)+"px)";
-    if(seamActive)seam.classList.add("on");  /* 멈춘 뒤 늦게 도착한 rAF 가 다시 켜지 않게 */
-  }
-  /* 끄기 = '스크롤이 멈춤'(위치 정렬 여부 무관) — 연타·끝쪽 클램프·한 칼럼 이동(↑↓)처럼 쪽 경계가 아닌 곳에 멈춰도 음영이 남지 않게.
-     scrollend 우선 + 미지원 브라우저용 150ms 유휴 타이머. 손가락이 닿아 있는 동안(tx!==null)은 유지. 멈추면 진행 목표(pagerTarget)도 해제. */
-  var seamIdleT=null,seamActive=false;
-  function seamIdle(){clearTimeout(seamIdleT);seamIdleT=null;if(tx!==null)return;seamActive=false;seam.classList.remove("on");pagerTarget=null;}
-  pageEl.addEventListener("scroll",function(){
-    seamActive=true;if(!seamRaf)seamRaf=requestAnimationFrame(drawSeam);
-    clearTimeout(seamIdleT);seamIdleT=setTimeout(seamIdle,150);
-  },{passive:true});
-  pageEl.addEventListener("scrollend",seamIdle,{passive:true});
-  D.addEventListener("touchend",function(){if(!seamIdleT)seamIdleT=setTimeout(seamIdle,150);},{passive:true});  /* 정렬된 자리에서 손을 뗀 경우(스크롤 없음) */
   /* 가장자리 탭 넘김(터치 전용·페이저 전용) — 화면 왼쪽/오른쪽 TAP_ZONE 영역을 짧게 탭하면 이전/다음 쪽.
      document 에 건다: 책 모드의 양옆 여백은 .page 밖이라 pageEl 리스너로는 못 받음. 링크·버튼·그림·코드·셸 UI 위 탭과 텍스트 선택 중은 제외. */
   var TAP_ZONE=0.22,tapX=null,tapY=0,tapT=0;

@@ -220,17 +220,8 @@ hr.sep{border:none;border-top:1px solid var(--line);max-width:var(--wide);margin
   /* 정수 px 스냅(round 지원 브라우저만 덮어씀·미지원은 위 선언 폴백) — dvw 소수점 폭이 쪽 넘김 계산에 누적 오차를 만들지 않게. 2px 단위=2단 분할도 정수. */
   width:round(down, calc(100dvw - 2*var(--sp-pad)), 2px);column-gap:round(var(--sp-gap), 1px);
   column-width:calc((round(down, calc(100dvw - 2*var(--sp-pad)), 2px) - round(var(--sp-gap), 1px)) / 2);}
-/* 쪽 넘김 경계(seam) — shell.js drawSeam 이 쪽 경계에 걸친 동안만 .on. 레이아웃 무관 오버레이(포인터 통과).
-   경계 띠 = 책상(종이보다 한 톤 어두움)+양쪽 종이 가장자리 그림자 → 단 간격과 다른 '넓은 쪽 사이 틈'으로 읽히게. */
-.turn-seam{position:fixed;z-index:105;pointer-events:none;overflow:hidden;opacity:0;transition:opacity .18s ease;display:none;}
-:root.paged .turn-seam,:root.spread .turn-seam{display:block;}
 /* 페이저: 가장자리 탭 넘김 시 더블탭 확대 지연 제거(핀치 줌은 유지) */
 :root.paged body,:root.spread body{touch-action:manipulation;}
-.turn-seam.on{opacity:1;transition-duration:.06s;}
-.turn-seam .ts-edge{position:absolute;top:0;bottom:0;left:0;  /* 폭·위치는 shell.js drawSeam(쪽 폭×1/3×sin(π·진행도)) */
-  background:color-mix(in srgb, var(--ink) 12%, var(--paper));border-left:1px solid var(--line-strong);border-right:1px solid var(--line-strong);
-  box-shadow:-10px 0 14px -8px rgba(0,0,0,.38),10px 0 14px -8px rgba(0,0,0,.38);}
-@media print{.turn-seam{display:none !important;}}
 /* 표: 페이저에선 단 폭에 맞춤 — .tablewrap 기본 max-width(--wide)가 단보다 넓으면 다음 쪽을 침범해 글이 잘림.
    가로 스크롤 대신 고정 레이아웃+칸 안 줄바꿈(표 안 가로 스크롤은 쪽 넘김 스와이프와 충돌). */
 :root.paged .tablewrap,:root.spread .tablewrap{max-width:100%;overflow-x:hidden;}
