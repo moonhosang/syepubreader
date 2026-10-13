@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>syepubreader</title>
+    <!-- 첫 화면 전용 스타일 — 책을 열면 리더(mount.ts)가 제거하고 셸 CSS 로 교체 -->
+    <style id="app-style">
+      :root { --bg: #f6f7f9; --ink: #1a2330; --soft: #5b6676; --line: #c4ced9; --accent: #2f6d9e; --err: #b3261e; }
+      @media (prefers-color-scheme: dark) { :root { --bg: #121821; --ink: #dfe6ee; --soft: #9aa6b4; --line: #3a4552; --accent: #6fb0e0; --err: #f2b8b5; } }
+      * { box-sizing: border-box; }
+      body { margin: 0; min-height: 100dvh; display: grid; place-items: center; background: var(--bg); color: var(--ink);
+        font: 16px/1.6 system-ui, -apple-system, "Segoe UI", "Pretendard", sans-serif; padding: 16px; }
+      main { width: min(560px, 100%); text-align: center; }
+      h1 { font-size: 1.6rem; margin: 0 0 4px; }
+      p.sub { margin: 0 0 24px; color: var(--soft); }
+      #drop { border: 2px dashed var(--line); border-radius: 16px; padding: 48px 20px; cursor: pointer; transition: border-color .15s, background .15s; }
+      #drop:hover, #drop:focus-visible, #drop.over { border-color: var(--accent); outline: none; background: color-mix(in srgb, var(--accent) 6%, transparent); }
+      #drop strong { display: block; font-size: 1.1rem; margin-bottom: 4px; }
+      #drop span { color: var(--soft); font-size: .9rem; }
+      #status { min-height: 1.6em; margin-top: 16px; color: var(--soft); }
+      #status.err { color: var(--err); }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>syepubreader</h1>
+      <p class="sub">EPUB 을 책처럼 읽기 · 파일은 이 기기 안에서만 처리됩니다</p>
+      <div id="drop" role="button" tabindex="0" aria-label="EPUB 파일 열기">
+        <strong>EPUB 파일을 끌어다 놓거나 눌러서 고르세요</strong>
+        <span>.epub</span>
+      </div>
+      <input id="file" type="file" accept=".epub,application/epub+zip" hidden />
+      <div id="status" role="status" aria-live="polite"></div>
+    </main>
+    <script type="module" src="/src/app/main.ts"></script>
+  </body>
+</html>
